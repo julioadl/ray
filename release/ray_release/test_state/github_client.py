@@ -1,20 +1,26 @@
 import boto3
 from github import Github
+from github.Issue import Issue
+
+from ray_release.test import (
+    Test,
+    TestResult,
+)
+
 
 class GithubClient:
-    _instance: Github = None
+    github_token = boto3.client(
+        "secretsmanager", region_name="us-west-2"
+    ).get_secret_value(SecretId="ray_ci_github_token")["SecretString"]["ray-ci-github"]
 
     def __init__(self):
-        raise RuntimeError('Initialize a github instead through instance() instead')
+        self.ray_repo = Github(self.github_token).get_repo("ray-project/ray")
 
-    @classmethod
-    def instance(cls):
-        if cls._instance:
-            return cls._instance
-        access_token = boto3.client(
-            "secretsmanager", region_name="us-west-2"
-        ).get_secret_value(SecretId=str(RELEASE_AWS_ANYSCALE_SECRET_ARN))[
-            "SecretString"
-        ]
-        cls._instance = Github(access_token)
-        return cls._instance
+    def create_release_test_issue(self, test: Test, test_result: TestResult) -> Issue:
+        return self.ray_repo.create_issue(
+            title=f"Release test {test.get_name()} failed",
+            body=f"Release test {test.get_name()} failed. "
+            "See {test_result.result_url} for more details.",
+            labels=["P0", "bug", "release-test"],
+            assignee="can-anyscale",
+        ).number

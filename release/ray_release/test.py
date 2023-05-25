@@ -37,12 +37,14 @@ class TestState(enum.Enum):
 @dataclass
 class TestResult:
     status: ResultStatus
+    result_url: str
     timestamp: int
 
     @classmethod
     def from_result(cls, result: Result):
         return cls(
             status=result.status,
+            result_url=result.buildkite_url,
             timestamp=int(time.time() * 1000),
         )
 
@@ -50,6 +52,7 @@ class TestResult:
     def from_dict(cls, result: dict):
         return cls(
             status=result["status"],
+            result_url=result["result_url"],
             timestamp=result["timestamp"],
         )
 
@@ -144,6 +147,18 @@ class Test(dict):
         Returns the anyscale byod image to use for this test.
         """
         return f"{DATAPLANE_ECR}/{self.get_byod_repo()}:{self.get_byod_image_tag()}"
+
+    def set_github_issue_number(self, issue_number: int) -> None:
+        """
+        Sets the github issue number for this test.
+        """
+        self["github_issue_number"] = issue_number
+
+    def get_github_issue_number(self) -> Optional[int]:
+        """
+        Returns the github issue number for this test.
+        """
+        return self.get("github_issue_number")
 
     def update_from_s3(self) -> None:
         """

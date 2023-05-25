@@ -2,6 +2,7 @@ from ray_release.test import (
     Test,
     TestState,
 )
+from ray_release.test_state.github_client import GithubClient
 
 
 class TestStateMachine:
@@ -42,8 +43,10 @@ class TestStateMachine:
         self.test.set_state(to_state)
 
     def _create_github_issue(self) -> None:
-        # TODO(can): implement this
-        pass
+        issue_number = GithubClient().create_release_test_issue(
+            self.test, self.test_results[0]
+        )
+        self.test.set_github_issue_number(issue_number)
 
     def _close_github_issue(self) -> None:
         # TODO(can): implement this
